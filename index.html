@@ -14,7 +14,6 @@
             --primary-hover: #4338ca;
             --success: #10b981;
             --gold: #f59e0b;
-            /* Gold for winner */
             --gold-bg: #fffbeb;
             --bg: #f1f5f9;
             --card-bg: #ffffff;
@@ -102,7 +101,7 @@
             transition: all 0.3s ease;
         }
 
-        /* NEW: Winner Style for Scoreboard Box */
+        /* Winner Style for Scoreboard Box */
         .candidate-card.winner-card {
             background-color: var(--gold-bg);
             border-color: var(--gold);
@@ -127,7 +126,6 @@
         /* --- MAIN STAGE (RESULT) --- */
         .result-area {
             min-height: 260px;
-            /* Allow it to grow for ties */
             background: #f8fafc;
             border-radius: 20px;
             display: flex;
@@ -250,6 +248,16 @@
             background-color: #059669;
         }
 
+        /* --- FOOTER --- */
+        .app-footer {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+            color: var(--text-sub);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
         @keyframes bounceIn {
             0% {
                 transform: scale(0.3);
@@ -288,7 +296,7 @@
 
     <div class="app-container" id="capture-target">
         <div class="header-row">
-            <h1>Election Result Game</h1>
+            <h1>Election Fun Game</h1>
             <div class="session-counter">Finished: <span id="total-runs">0</span></div>
         </div>
 
@@ -307,6 +315,11 @@
                 Result Image</button>
             <button id="reset-btn" class="reset-btn" onclick="resetElection()" style="display: none;">Start New
                 Election</button>
+        </div>
+
+        <div class="app-footer">
+            Developed by Md. Nayeem Khan<br>
+            &copy; <span id="year">2026</span> All Rights Reserved
         </div>
     </div>
 
@@ -329,13 +342,15 @@
         let isFinished = false;
         let totalFinishedElections = 0;
 
+        // Set current year automatically
+        document.getElementById('year').textContent = new Date().getFullYear();
+
         function init() {
             const scoreboard = document.getElementById('scoreboard');
             scoreboard.innerHTML = '';
 
             candidates.forEach(c => {
                 votes[c.id] = 0;
-                // Note: Added ID to the card div itself to target it later for coloring
                 const card = document.createElement('div');
                 card.className = 'candidate-card';
                 card.id = `card-${c.id}`;
@@ -412,20 +427,17 @@
                 }
             });
 
-            // 4. Display Final Result (Handle Ties)
+            // 4. Display Final Result
             const resultContainer = document.getElementById('result-area');
 
             if (winners.length === 1) {
-                // Single Winner
                 resultContainer.innerHTML = `
                 <div style="font-size:0.9rem; color:#64748b; margin-bottom:10px;">ULTIMATE WINNER</div>
                 <img src="${winners[0].path}" class="winner-img" style="border: 4px solid #f59e0b; border-radius: 50%;">
                 <div class="winner-name" style="color: #1e293b; font-size: 1.8rem;">${winners[0].name}</div>
             `;
             } else {
-                // It's a Tie (2 or more)
                 let tieHTML = `<div style="font-size:1.2rem; font-weight:bold; margin-bottom:15px; width:100%;">It's a Tie!</div><div class="tie-container">`;
-
                 winners.forEach(w => {
                     tieHTML += `
                     <div class="tie-item">
