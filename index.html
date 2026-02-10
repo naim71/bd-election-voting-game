@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BD Election Result (Fun Game)</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --gold: #f59e0b;
+            /* Gold for winner */
+            --gold-bg: #fffbeb;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .app-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        /* Header */
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-main);
+        }
+
+        .session-counter {
+            background: #f1f5f9;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            font-weight: 600;
+            border: 1px solid var(--border);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* --- SCOREBOARD --- */
+        .scoreboard {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+
+        .candidate-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        /* NEW: Winner Style for Scoreboard Box */
+        .candidate-card.winner-card {
+            background-color: var(--gold-bg);
+            border-color: var(--gold);
+            transform: scale(1.1);
+            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3);
+            z-index: 10;
+        }
+
+        .score-img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+
+        .score-count {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: var(--text-main);
+        }
+
+        /* --- MAIN STAGE (RESULT) --- */
+        .result-area {
+            min-height: 260px;
+            /* Allow it to grow for ties */
+            background: #f8fafc;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .result-area.active {
+            background: #eef2ff;
+            border-color: var(--primary);
+        }
+
+        /* Result Images */
+        .winner-img {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.15));
+        }
+
+        .winner-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 15px;
+            color: var(--primary);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Tie Container */
+        .tie-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tie-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100px;
+        }
+
+        .tie-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+
+        .tie-name {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .placeholder-text {
+            color: var(--text-sub);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* --- BUTTONS --- */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            border: none;
+            padding: 18px;
+            font-size: 1.1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .vote-btn {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+        }
+
+        .vote-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .reset-btn {
+            background-color: white;
+            color: var(--text-sub);
+            border: 2px solid var(--border);
+        }
+
+        .reset-btn:hover {
+            background-color: #f1f5f9;
+            color: var(--text-main);
+        }
+
+        .screenshot-btn {
+            background-color: var(--success);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+        }
+
+        .screenshot-btn:hover {
+            background-color: #059669;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            70% {
+                transform: scale(0.9);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container" id="capture-target">
+        <div class="header-row">
+            <h1>Election Result Game</h1>
+            <div class="session-counter">Finished: <span id="total-runs">0</span></div>
+        </div>
+
+        <div class="subtitle" id="round-display">Round 1 of 10</div>
+
+        <div class="scoreboard" id="scoreboard">
+        </div>
+
+        <div class="result-area" id="result-area">
+            <span class="placeholder-text">Press button to vote</span>
+        </div>
+
+        <div class="btn-group">
+            <button id="vote-btn" class="vote-btn" onclick="castVote()">Generate Result</button>
+            <button id="shot-btn" class="screenshot-btn" onclick="takeScreenshot()" style="display: none;">📸 Save
+                Result Image</button>
+            <button id="reset-btn" class="reset-btn" onclick="resetElection()" style="display: none;">Start New
+                Election</button>
+        </div>
+    </div>
+
+    <script>
+        // ---------------------------------------------------------
+        // CONFIGURATION
+        // ---------------------------------------------------------
+        const candidates = [
+            { id: 'c1', name: 'Bangladesh Jamaat-E-Islami', path: 'icon1.png' },
+            { id: 'c2', name: 'BNP', path: 'icon2.png' },
+            { id: 'c3', name: 'Islami Andolon Bangladesh', path: 'icon3.png' },
+            { id: 'c4', name: 'Jatiya Party', path: 'icon4.png' },
+            { id: 'c5', name: 'NCP', path: 'icon5.png' }
+        ];
+        // ---------------------------------------------------------
+
+        let votes = {};
+        let currentRound = 1;
+        const maxRounds = 10;
+        let isFinished = false;
+        let totalFinishedElections = 0;
+
+        function init() {
+            const scoreboard = document.getElementById('scoreboard');
+            scoreboard.innerHTML = '';
+
+            candidates.forEach(c => {
+                votes[c.id] = 0;
+                // Note: Added ID to the card div itself to target it later for coloring
+                const card = document.createElement('div');
+                card.className = 'candidate-card';
+                card.id = `card-${c.id}`;
+                card.innerHTML = `
+                <img src="${c.path}" class="score-img" alt="${c.name}" onerror="this.src='https://placehold.co/60x60/e2e8f0/64748b?text=?'">
+                <span class="score-count" id="score-${c.id}">0</span>
+            `;
+                scoreboard.appendChild(card);
+            });
+
+            currentRound = 1;
+            isFinished = false;
+
+            const voteBtn = document.getElementById('vote-btn');
+            voteBtn.style.display = 'flex';
+
+            document.getElementById('reset-btn').style.display = 'none';
+            document.getElementById('shot-btn').style.display = 'none';
+            document.getElementById('round-display').innerText = `Round 1 of ${maxRounds}`;
+            document.getElementById('result-area').innerHTML = '<span class="placeholder-text">Press button to vote</span>';
+            document.getElementById('result-area').className = 'result-area';
+        }
+
+        function castVote() {
+            if (isFinished) return;
+
+            const resultArea = document.getElementById('result-area');
+            resultArea.classList.remove('active');
+            void resultArea.offsetWidth;
+            resultArea.classList.add('active');
+
+            const winnerIndex = Math.floor(Math.random() * candidates.length);
+            const winner = candidates[winnerIndex];
+
+            votes[winner.id]++;
+            document.getElementById(`score-${winner.id}`).innerText = votes[winner.id];
+
+            resultArea.innerHTML = `
+            <img src="${winner.path}" class="winner-img" alt="${winner.name}" onerror="this.src='https://placehold.co/150x150/e2e8f0/64748b?text=?'">
+            <div class="winner-name">${winner.name}</div>
+        `;
+
+            if (currentRound < maxRounds) {
+                currentRound++;
+                document.getElementById('round-display').innerText = `Round ${currentRound} of ${maxRounds}`;
+            } else {
+                endElection();
+            }
+        }
+
+        function endElection() {
+            isFinished = true;
+            totalFinishedElections++;
+            document.getElementById('total-runs').innerText = totalFinishedElections;
+            document.getElementById('round-display').innerText = "Election Finalized";
+            document.getElementById('vote-btn').style.display = 'none';
+            document.getElementById('shot-btn').style.display = 'flex';
+            document.getElementById('reset-btn').style.display = 'flex';
+
+            // 1. Find Maximum Votes
+            let maxVotes = 0;
+            candidates.forEach(c => {
+                if (votes[c.id] > maxVotes) maxVotes = votes[c.id];
+            });
+
+            // 2. Identify All Winners
+            const winners = candidates.filter(c => votes[c.id] === maxVotes);
+
+            // 3. Highlight Winner Box(es) on Scoreboard
+            winners.forEach(w => {
+                const cardElement = document.getElementById(`card-${w.id}`);
+                if (cardElement) {
+                    cardElement.classList.add('winner-card');
+                }
+            });
+
+            // 4. Display Final Result (Handle Ties)
+            const resultContainer = document.getElementById('result-area');
+
+            if (winners.length === 1) {
+                // Single Winner
+                resultContainer.innerHTML = `
+                <div style="font-size:0.9rem; color:#64748b; margin-bottom:10px;">ULTIMATE WINNER</div>
+                <img src="${winners[0].path}" class="winner-img" style="border: 4px solid #f59e0b; border-radius: 50%;">
+                <div class="winner-name" style="color: #1e293b; font-size: 1.8rem;">${winners[0].name}</div>
+            `;
+            } else {
+                // It's a Tie (2 or more)
+                let tieHTML = `<div style="font-size:1.2rem; font-weight:bold; margin-bottom:15px; width:100%;">It's a Tie!</div><div class="tie-container">`;
+
+                winners.forEach(w => {
+                    tieHTML += `
+                    <div class="tie-item">
+                        <img src="${w.path}" class="tie-img" onerror="this.src='https://placehold.co/80x80/e2e8f0/64748b?text=?'">
+                        <div class="tie-name">${w.name}</div>
+                    </div>
+                `;
+                });
+                tieHTML += `</div>`;
+                resultContainer.innerHTML = tieHTML;
+            }
+        }
+
+        function takeScreenshot() {
+            const element = document.getElementById("capture-target");
+            const btn = document.getElementById("shot-btn");
+            const originalText = btn.innerText;
+            btn.innerText = "Capturing...";
+
+            html2canvas(element, { backgroundColor: "#ffffff", scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Election_Result_${totalFinishedElections}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                btn.innerText = "Saved!";
+                setTimeout(() => { btn.innerText = originalText; }, 2000);
+            });
+        }
+
+        function resetElection() {
+            init();
+        }
+
+        init();
+    </script>
+
+</body>
+
+</html>
